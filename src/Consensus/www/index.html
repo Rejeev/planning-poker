@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html data-ng-app="consensus">
+<head>
+    <title>Planning Poker</title>
+
+    <link type="text/css" rel="stylesheet" href="/css/bootstrap.css" />
+    <link type="text/css" rel="stylesheet" href="/css/consensus.css" />
+    
+    <script src="/js/jquery-2.1.4.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/angular.min.js"></script>
+    <script src="/js/angular-cookies.min.js"></script>
+    <script src="/js/jquery.signalR-2.2.0.min.js"></script>
+
+    <script src="/signalr/hubs"></script>
+    <script src="/app/consensus.pokerRoom.js"></script>
+</head>
+<body data-ng-controller="PokerRoomCtrl" id="bodyRoom" data-ng-class="{ 'hide-room': joinModalNew || joinRoomModalNew }">
+    <div class="banner">Planning Poker</div>
+	<div class="container-fluid playing-field">       
+		<h2>Team: {{ room.Name }}</h2>
+			
+		<button class="pull-right btn btn-danger" data-ng-click="resetRoom()">Reset Team</button>
+		<button class="pull-right btn btn-info" data-ng-hide="room.AdminUser!=me.Email" data-ng-click="showAllCards(!allCardsShowing)">{{ allCardsShowing && 'Hide' || 'Show' }} All Cards</button>
+
+		<section>
+			<div class="row-fluid">
+                <div class="row-fluid Admin"  >
+                    <span>Story Id</span>:
+                    <input type="text" class="topic-id" data-ng-disabled="room.AdminUser!=me.Email" data-ng-model="room.TopicId" placeholder="Story Id" required />
+
+                    <br /><span>As an/a</span>
+                    <input type="text" class="span12 topicCapb" data-ng-disabled="room.AdminUser!=me.Email" data-ng-model="room.TopicCapability" placeholder="Enter Topic"  required />
+                   
+                    <span>, I would like to</span>
+                    <input type="text" class="span12 topic" data-ng-disabled="room.AdminUser!=me.Email" data-ng-model="room.Topic" placeholder="Enter Topic"  required />
+                    <br />
+                    <span>So that</span>
+                    <input type="text" class="span12 topic"  data-ng-disabled="room.AdminUser!=me.Email" data-ng-model="room.TopicDesc" placeholder="Enter Topic" required />
+                    <button class="pull-right btn btn-primary" data-ng-disabled="room.AdminUser!=me.Email" data-ng-click="roomTopicChanged()">Send</button>
+                </div>
+</div>
+            <br />
+            <div class="row-fluid listvalue">
+                <!--<div class="listvalue">-->
+                    <table>
+                        <tr>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('0')"><span>0</span></div>
+                            </td>
+                            <td>
+                            <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('1/2')"><span>1/2</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('2')"><span>2</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('3')"><span>3</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('5')"><span>5</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('8')"><span>8</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('13')"><span>13</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('20')"><span>20</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('40')"><span>40</span></div>
+                            </td>
+
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('100')"><span>100</span></div>
+                            </td>
+                            <td>
+                                <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('?')"><span>?</span></div>
+                            </td>
+                            <td> 
+                            <div class="valueCard" data-ng-model="myCard.Value" data-ng-click="myCardValueChanged('Break')"><i class="glyphicon glyphicon-check"></i></div>
+                            </td>
+                        </tr>
+                    </table>
+                <!--</div>-->
+            
+             
+
+            </div>	
+            <br />
+            <br />
+			<ul class="row-fluid cards">
+                                <!--Math.max.apply(Math,_array);-->
+                <!--{ 'card-hidden': !allCardsShowing && card.User.Email != me.Email, 'card-selected': card.Value.length > 0 }-->
+
+                
+				<li class="card" data-ng-repeat="card in room.Cards" data-ng-class="cardChangeStyle(card)">
+                    <div class="selectEstimate">
+                        <i class="glyphicon glyphicon-check" data-ng-hide="room.AdminUser!=me.Email" data-ng-click="selectedEstimateValue(card)"></i>
+</div>
+                    <div class="name">{{ card.User.Name }}</div>                    
+					<div class="value">{{ card.Value }}</div>
+				</li>
+			</ul>
+				
+			
+		</section>
+        <br />
+        <br />
+        <div id="storyEstimates" class="story-Estimate" data-ng-show="room.Estimate.length>0">
+            <button class="btn btn-primary" data-ng-click="addNextEstimate()">Add Next Estimation</button>
+            <br />
+            <br />
+            <!--<div class="gridStyle" ng-grid="room.Estimate">
+            </div>-->
+            <div id="sub" class="estimate-Details" data-ng-repeat="estm in room.Estimate" >
+
+
+
+                <table><tr><td>
+<td> <div style="width:100px;"><b>{{ estm.StoryId }}</b></div></td>
+                           <td> <div style="width:500px;">{{ estm.Story }}</div></td>
+                           <td> <div style="width:100px; padding :15px;">{{ estm.User }} </div></td>
+                           <td><div style="width:50px;">{{ estm.Estimate }}</div></td>
+                           <td><div style="width:50px;"><button class="btn btn-danger" data-ng-disabled="room.AdminUser!=me.Email" data-ng-click="reEstimate(estm)">Re-Estimate</button></div></td>
+                    </tr></table>
+                 
+            </div>
+        </div>
+		<div class="players">
+			<h4>Players</h4>
+					
+			<ul>
+                <li data-ng-repeat="user in room.Users" data-ng-class="{ disabled: user.Disconnected, me: user.Email == me.Email}">
+                    <i class="glyphicon glyphicon-trash" data-ng-click="removeRoomUser()"></i> {{ user.Name}} 
+                    <i class="{{room.AdminUser == user.Email && 'glyphicon glyphicon-user' || '' }}"></i> 
+                   
+                </li>
+			</ul>
+		</div>
+	</div>
+		
+	<div id="joinModal" data-ng-show="joinModal" class="poker-Modal">
+		<div class="modal-header">
+			<h3>Planning Poker</h3>
+		</div>
+		<div class="modal-body">
+			<p><label>Name<br/><input type="text" data-ng-model="me.Name" placeholder="Name" required /></label></p>
+			<p><label>Email<br/><input type="email" data-ng-model="me.Email" placeholder="Email" required /></label></p>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" data-ng-click="closeJoinModal()">Join</button>
+		</div>
+	</div>
+
+	<div id="joinRoomModal" data-ng-show="joinRoomModal" class="poker-Modal">
+		<div class="modal-header">
+			<h3>Join Team</h3>
+		</div>
+		<div class="modal-body">
+			<p><label>Team Name<br/><input type="text" data-ng-model="room.Name" placeholder="Team Name" required /></label></p>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" data-ng-click="closeJoinRoomModal()">Join Team</button>
+		</div>
+	</div>
+        
+</body>
+</html>
